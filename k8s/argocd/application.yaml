@@ -1,0 +1,158 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ip-reverser-app
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ip-reverser-app
+    app.kubernetes.io/part-of: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # The project the application belongs to
+  project: default
+  
+  # Source of the application manifests
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+    targetRevision: main
+    path: helm
+    
+    # Helm specific configuration
+    helm:
+      # Release name
+      releaseName: ip-reverser-app
+      
+      # Values files to use
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml  # Environment-specific overrides
+      
+      # Additional parameters
+      parameters:
+        - name: global.environment
+          value: staging
+        - name: image.tag
+          value: latest
+      
+      # Skip CRDs if needed
+      skipCrds: false
+  
+  # Destination cluster and namespace
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ip-reverser
+  
+  # Sync policy
+  syncPolicy:
+    # Automated sync configuration
+    automated:
+      prune: true      # Remove resources that are no longer defined in Git
+      selfHeal: true   # Correct drift by syncing when the live cluster's state deviates from Git
+      allowEmpty: false # Don't sync if the directory is empty
+    
+    # Sync options
+    syncOptions:
+      - CreateNamespace=true     # Create namespace if it doesn't exist
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true          # Prune resources as a last step
+      - RespectIgnoreDifferences=true
+      - ApplyOutOfSyncOnly=true # Only apply resources that are out of sync
+    
+    # Retry configuration
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # Ignore differences in certain fields (common for dynamic fields)
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/clusterIP
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data/deploymentTime
+  
+  # Health check configuration
+  info:
+    - name: 'Environment'
+      value: 'staging'
+    - name: 'Repository'
+      value: 'https://github.com/YOUR_USERNAME/YOUR_REPO_NAME'
+
+---
+# Production Application (optional - for production environment)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ip-reverser-app-prod
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ip-reverser-app-prod
+    app.kubernetes.io/part-of: argocd
+    environment: production
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/Oluwaseun2003/reversed-ip-app
+    targetRevision: main
+    path: helm
+    
+    helm:
+      releaseName: ip-reverser-app-prod
+      valueFiles:
+        - values.yaml
+        - values-prod.yaml
+      parameters:
+        - name: global.environment
+          value: production
+        - name: deployment.replicaCount
+          value: "3"
+        - name: autoscaling.minReplicas
+          value: "3"
+        - name: autoscaling.maxReplicas
+          value: "20"
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ip-reverser-prod
+  
+  syncPolicy:
+    # Manual sync for production - requires approval
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/clusterIP

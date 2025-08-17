@@ -1,0 +1,226 @@
+# Default values for ip-reverser-app
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  # Environment (dev, staging, prod)
+  environment: staging
+  # Image pull policy
+  imagePullPolicy: IfNotPresent
+
+# Application image configuration
+image:
+  repository: docker.io/YOUR_DOCKER_USERNAME/ip-reverser-app
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Alternative registry configurations (commented)
+# For Google Container Registry:
+# repository: gcr.io/YOUR_PROJECT_ID/ip-reverser-app
+# For Amazon ECR:
+# repository: YOUR_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/ip-reverser-app
+
+# Deployment configuration
+deployment:
+  replicaCount: 2
+  
+  # Strategy for rolling updates
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  
+  # Container configuration
+  container:
+    port: 3001
+    
+    # Resource limits and requests
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+    
+    # Liveness probe
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 3001
+        scheme: HTTP
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    
+    # Readiness probe
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 3001
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    
+    # Startup probe
+    startupProbe:
+      httpGet:
+        path: /health
+        port: 3001
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 30
+      successThreshold: 1
+
+# Environment variables
+env:
+  # Application environment
+  NODE_ENV: production
+  PORT: 3001
+  CORS_ORIGIN: "*"
+  
+  # Database configuration (will be set via secret)
+  DATABASE_URL:
+    secretName: ip-reverser-secrets
+    secretKey: database-url
+
+# Service configuration
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 3001
+  annotations: {}
+    # For AWS Load Balancer:
+    # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    # service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    # For GCP Load Balancer:
+    # cloud.google.com/load-balancer-type: "External"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"  # Common for RKE clusters
+  annotations: {}
+    # For AWS ALB:
+    # kubernetes.io/ingress.class: "alb"
+    # alb.ingress.kubernetes.io/scheme: "internet-facing"
+    # alb.ingress.kubernetes.io/target-type: "ip"
+    # For GCP:
+    # kubernetes.io/ingress.global-static-ip-name: "ip-reverser-ip"
+    # networking.gke.io/managed-certificates: "ip-reverser-ssl"
+    # kubernetes.io/ingress.allow-http: "false"
+  hosts:
+    - host: api.your-domain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: ip-reverser-tls
+    #   hosts:
+    #     - api.your-domain.com
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod Security Context
+podSecurityContext:
+  fsGroup: 1001
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+
+# Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1001
+  capabilities:
+    drop:
+    - ALL
+
+# ConfigMap data
+configMap:
+  data:
+    NODE_ENV: "production"
+    PORT: "3001"
+    CORS_ORIGIN: "*"
+
+# Secret data (base64 encoded values)
+secrets:
+  # Database URL - will be set via external secret or manually
+  database-url: ""
+
+# PostgreSQL dependency (if deploying postgres with the app)
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "your-postgres-password"
+    username: "postgres"
+    password: "password"
+    database: "ipreverser"
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+
+# Service Monitor for Prometheus (monitoring)
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /metrics
+  labels:
+    app: ip-reverser-app
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Network Policy
+networkPolicy:
+  enabled: false
+  ingress:
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 3001
+
+# Additional labels to apply to all resources
+labels: {}
+
+# Additional annotations to apply to all resources
+annotations: {}
+
+# Node selector for pod assignment
+nodeSelector: {}
+
+# Tolerations for pod assignment
+tolerations: []
+
+# Affinity for pod assignment
+affinity: {}
+
+# This field will be updated by CI/CD pipeline
+deploymentTime: "2025-01-01T00:00:00Z"

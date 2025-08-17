@@ -1,0 +1,308 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  # Docker Registry Configuration
+  REGISTRY: docker.io  # Using Docker Hub for now
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  IMAGE_NAME: ip-reverser-app
+  
+  # RKE Cluster Configuration (Amazon-hosted)
+  CLUSTER_NAME: ip-reverser-rke-cluster
+  
+  # AWS Configuration (commented for now)
+  # AWS_REGION: us-east-1
+  # AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  # AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  
+  
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm ci
+
+    - name: Run backend tests
+      run: |
+        cd backend
+        npm run test
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # AWS/RKE Setup (commented for now)
+    # - name: Configure AWS credentials
+    #   uses: aws-actions/configure-aws-credentials@v4
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     aws-region: ${{ env.AWS_REGION }}
+
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest
+        format: spdx-json
+        output-file: sbom.spdx.json
+
+    - name: Scan image for vulnerabilities
+      uses: anchore/scan-action@v3
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+        fail-build: false
+        severity-cutoff: high
+
+  update-manifests:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update Helm values
+      run: |
+        # Extract the image tag from the built image
+        IMAGE_TAG=$(echo "${{ needs.build-and-push.outputs.image-tag }}" | grep -o 'main-[a-f0-9]\{7\}' || echo "latest")
+        
+        # Update the values.yaml file with new image tag
+        sed -i "s|tag: \".*\"|tag: \"${IMAGE_TAG}\"|g" helm/values.yaml
+        
+        # Update Docker Hub repository field
+        sed -i "s|repository: docker.io/YOUR_DOCKER_USERNAME/ip-reverser-app|repository: docker.io/${{ env.DOCKER_USERNAME }}/ip-reverser-app|g" helm/values.yaml
+        
+        # Update timestamp to trigger ArgoCD sync
+        DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        sed -i "s|deploymentTime: \".*\"|deploymentTime: \"${DATE}\"|g" helm/values.yaml
+
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add helm/values.yaml
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Update image tag to ${{ needs.build-and-push.outputs.image-tag }}"
+          git push
+        fi
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  deploy-to-staging:
+    runs-on: ubuntu-latest
+    needs: [build-and-push, update-manifests]
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # RKE/Amazon cluster connection (commented for now)
+    # - name: Configure AWS credentials
+    #   uses: aws-actions/configure-aws-credentials@v4
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     aws-region: ${{ env.AWS_REGION }}
+
+    # - name: Setup kubectl for RKE cluster
+    #   run: |
+    #     # Install kubectl
+    #     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    #     chmod +x kubectl
+    #     sudo mv kubectl /usr/local/bin/
+    #     
+    #     # Configure kubectl with RKE cluster config
+    #     echo "${{ secrets.RKE_KUBECONFIG }}" | base64 -d > ~/.kube/config
+    #     kubectl cluster-info
+
+
+    - name: Install ArgoCD CLI
+      run: |
+        curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+        sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+
+    - name: Sync ArgoCD Application
+      run: |
+        # Login to ArgoCD
+        argocd login ${{ secrets.ARGOCD_SERVER }} \
+          --username ${{ secrets.ARGOCD_USERNAME }} \
+          --password ${{ secrets.ARGOCD_PASSWORD }} \
+          --insecure
+
+        # Sync the application
+        argocd app sync ip-reverser-app --force
+
+        # Wait for sync to complete
+        argocd app wait ip-reverser-app --timeout 300
+
+    - name: Run health checks
+      run: |
+        # Wait for deployment to be ready
+        kubectl rollout status deployment/ip-reverser-app -n ip-reverser --timeout=300s
+        
+        # Get service endpoint
+        SERVICE_IP=$(kubectl get svc ip-reverser-app -n ip-reverser -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # Health check
+        for i in {1..30}; do
+          if curl -f http://$SERVICE_IP/api/health; then
+            echo "Health check passed!"
+            break
+          fi
+          echo "Health check attempt $i failed, retrying in 10s..."
+          sleep 10
+        done
+
+  notification:
+    runs-on: ubuntu-latest
+    needs: [deploy-to-staging]
+    if: always()
+    
+    steps:
+    - name: Notify deployment status
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  promote-to-production:
+    runs-on: ubuntu-latest
+    needs: [deploy-to-staging]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # RKE/Amazon Production Deployment (commented for now)
+    # - name: Configure AWS credentials
+    #   uses: aws-actions/configure-aws-credentials@v4
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     aws-region: ${{ env.AWS_REGION }}
+
+    # - name: Deploy to Production RKE Cluster
+    #   run: |
+    #     # Install kubectl
+    #     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    #     chmod +x kubectl
+    #     sudo mv kubectl /usr/local/bin/
+    #     
+    #     # Configure kubectl with Production RKE cluster config
+    #     echo "${{ secrets.RKE_KUBECONFIG_PROD }}" | base64 -d > ~/.kube/config
+    #     
+    #     # Install ArgoCD CLI
+    #     curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+    #     sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+    #     
+    #     # Login and sync production app
+    #     argocd login ${{ secrets.ARGOCD_SERVER_PROD }} \
+    #       --username ${{ secrets.ARGOCD_USERNAME }} \
+    #       --password ${{ secrets.ARGOCD_PASSWORD }} \
+    #       --insecure
+    #     
+    #     argocd app sync ip-reverser-app-prod --force
+    #     argocd app wait ip-reverser-app-prod --timeout 300
+
+
+    - name: Placeholder for Production Deployment
+      run: |
+        echo "Production deployment steps will be configured when RKE cluster is ready"
+        echo "This step prevents the job from failing"
