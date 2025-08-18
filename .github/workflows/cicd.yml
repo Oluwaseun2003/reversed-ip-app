@@ -119,9 +119,6 @@ jobs:
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
 
-    with:
-        context: ./helm
-        file: ./helm/values.yaml
     
     steps:
     - name: Checkout code
@@ -129,7 +126,10 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Update Helm values
+    - name: Update Helm values'
+      with:
+        context: ./helm
+        file: ./helm/values.yaml
       run: |
         # Extract the image tag from the built image
         IMAGE_TAG=$(echo "${{ needs.build-and-push.outputs.image-tag }}" | grep -o 'main-[a-f0-9]\{7\}' || echo "latest")
