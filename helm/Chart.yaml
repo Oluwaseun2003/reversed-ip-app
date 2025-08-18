@@ -1,6 +1,6 @@
 apiVersion: v2
 name: reversed-ip-app
-description: A Helm chart for deploying the Reversed IP Application
+description: A Helm chart for deploying the Reversed IP Application (NestJS + Prisma + PostgreSQL)
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
@@ -20,4 +20,8 @@ maintainers:
   - name: Oluwaseun1511
     email: oluwafemioluwaseun421@gmail.com
 
-dependencies: []
+dependencies:
+  - name: postgresql
+    version: 12.2.6
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
