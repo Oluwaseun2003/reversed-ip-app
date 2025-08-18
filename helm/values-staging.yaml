@@ -1,12 +1,12 @@
 global:
-  # Environment (dev, staging, prod)
+  # Environment (staging)
   environment: staging
   imagePullPolicy: IfNotPresent
 
 # Application image configuration
 image:
   repository: docker.io/oluwaseun1511/ip-reverser-app
-  tag: "latest"
+  tag: "staging"
   pullPolicy: IfNotPresent
 
 deployment:
@@ -17,11 +17,8 @@ deployment:
       maxSurge: 1
       maxUnavailable: 0
   
-  # Container configuration
   container:
     port: 3001
-    
-    # Resource limits and requests
     resources:
       limits:
         cpu: 500m
@@ -40,8 +37,7 @@ deployment:
       timeoutSeconds: 5
       failureThreshold: 3
       successThreshold: 1
-    
-    # Readiness probe
+
     readinessProbe:
       httpGet:
         path: /health
@@ -52,8 +48,7 @@ deployment:
       timeoutSeconds: 5
       failureThreshold: 3
       successThreshold: 1
-    
-    # Startup probe
+
     startupProbe:
       httpGet:
         path: /health
@@ -65,49 +60,31 @@ deployment:
       failureThreshold: 30
       successThreshold: 1
 
-# Environment variables
 env:
-  NODE_ENV: production
+  NODE_ENV: staging
   PORT: 3001
   CORS_ORIGIN: "*"
   DATABASE_URL:
     secretName: ip-reverser-secrets
     secretKey: database-url
 
-# Service configuration
 service:
   type: LoadBalancer
   port: 80
   targetPort: 3001
   annotations: {}
-  # For AWS Load Balancer:
-  # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-  # service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
 
-# Ingress configuration
 ingress:
   enabled: true
   className: "nginx"
   annotations: {}
-  # For AWS ALB:
-  # kubernetes.io/ingress.class: "alb"
-  # alb.ingress.kubernetes.io/scheme: "internet-facing"
-  # alb.ingress.kubernetes.io/target-type: "ip"
-  # For GCP:
-  # kubernetes.io/ingress.global-static-ip-name: "ip-reverser-ip"
-  # networking.gke.io/managed-certificates: "ip-reverser-ssl"
-  # kubernetes.io/ingress.allow-http: "false"
   hosts:
-    - host: api.your-domain.com
+    - host: staging.ip-reverse.cloudknight-api.com
       paths:
         - path: /
           pathType: Prefix
   tls: []
-  # - secretName: ip-reverser-tls
-  #   hosts:
-  #     - api.your-domain.com
 
-# Horizontal Pod Autoscaler
 autoscaling:
   enabled: true
   minReplicas: 2
@@ -115,14 +92,12 @@ autoscaling:
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
-# Pod Security Context
 podSecurityContext:
   fsGroup: 1001
   runAsNonRoot: true
   runAsUser: 1001
   runAsGroup: 1001
 
-# Security Context
 securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: false
@@ -132,25 +107,22 @@ securityContext:
     drop:
       - ALL
 
-# ConfigMap data
 configMap:
   data:
-    NODE_ENV: "production"
+    NODE_ENV: "staging"
     PORT: "3001"
     CORS_ORIGIN: "*"
 
-# Secret data (base64 encoded values)
 secrets:
   database-url: "cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBhc3N3b3JkQGhvc3QuZG9ja2VyLmludGVybmFsOjU0MzMvaXByZXZlcnNlcg=="
 
-# PostgreSQL dependency
 postgresql:
   enabled: true
   auth:
     postgresPassword: "your-postgres-password"
     username: "postgres"
     password: "password"
-    database: "ipreverser"
+    database: "ipreverser_staging"
   primary:
     persistence:
       enabled: true
@@ -163,7 +135,6 @@ postgresql:
         cpu: 200m
         memory: 256Mi
 
-# Service Monitor
 serviceMonitor:
   enabled: true
   interval: 30s
@@ -172,12 +143,10 @@ serviceMonitor:
   labels:
     app: ip-reverser-app
 
-# Pod Disruption Budget
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
 
-# Network Policy
 networkPolicy:
   enabled: false
   ingress:
@@ -191,4 +160,4 @@ annotations: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
-deploymentTime: "2025-08-18T13:52:34Z"
+deploymentTime: "2025-08-18T14:20:23Z"
