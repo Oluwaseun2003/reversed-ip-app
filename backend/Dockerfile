@@ -15,14 +15,14 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Generate Prisma client
 RUN npx prisma generate
 
 # Development stage
 FROM base AS development
-RUN npm ci
+RUN npm install
 COPY . .
 EXPOSE 3001
 CMD ["npm", "run", "dev"]
@@ -30,7 +30,7 @@ CMD ["npm", "run", "dev"]
 # Build stage
 FROM base AS build
 COPY . .
-RUN npm ci
+RUN npm install
 RUN npm run build
 RUN npx prisma generate
 
@@ -48,7 +48,7 @@ RUN apk add --no-cache openssl libc6-compat
 
 # Copy package files and install production dependencies
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Copy Prisma schema and generate client
 COPY prisma ./prisma/
