@@ -112,6 +112,44 @@ kubectl apply -f manifests/
 kubectl get pods -n <namespace>
 kubectl get svc -n <namespace>
 ```
+---
+
+
+---
+🧪 Testing the API with curl
+
+After running the app (default port 3001), you can test the endpoints:
+
+1️⃣ Reverse a specific IP
+curl -X POST http://localhost:3001/api/ip/reverse \
+  -H "Content-Type: application/json" \
+  -d '{"ip": "192.168.6.5"}'
+
+
+✅ Example Response:
+
+{
+  "success": true,
+  "data": {
+    "id": "cmegu166d0001s0r4hpyzbooj",
+    "originalIP": "192.168.6.5",
+    "reversedIP": "5.6.168.192",
+    "requestIP": "::1",
+    "userAgent": "curl/8.8.0",
+    "createdAt": "Mon Aug 18 2025 09:07:44 GMT+0100",
+    "timestamp": "2025-08-18T08:07:44.773Z"
+  },
+  "message": "IP address reversed and stored successfully"
+}
+
+2️⃣ Get your current IP reversed
+curl http://localhost:3001/api/ip/my-ip
+
+3️⃣ View history of reversed IPs
+curl http://localhost:3001/api/ip/history
+
+4️⃣ Search reversed IPs
+curl "http://localhost:3001/api/ip/search?q=192"
 
 ---
 
