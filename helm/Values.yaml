@@ -1,31 +1,17 @@
-# Default values for ip-reverser-app
-# This is a YAML-formatted file.
 
-# Global configuration
 global:
   # Environment (dev, staging, prod)
   environment: staging
-  # Image pull policy
   imagePullPolicy: IfNotPresent
 
 # Application image configuration
 image:
-  repository: docker.io/YOUR_DOCKER_USERNAME/ip-reverser-app
+  repository: docker.io/oluwaseun1511/ip-reverser-app
   tag: "latest"
   pullPolicy: IfNotPresent
-
-# Alternative registry configurations (commented)
-# For Google Container Registry:
-# repository: gcr.io/YOUR_PROJECT_ID/ip-reverser-app
-# For Amazon ECR:
-# repository: YOUR_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/ip-reverser-app
-
-# Deployment configuration
 deployment:
   replicaCount: 2
-  
-  # Strategy for rolling updates
-  strategy:
+    strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
@@ -44,7 +30,6 @@ deployment:
         cpu: 200m
         memory: 256Mi
     
-    # Liveness probe
     livenessProbe:
       httpGet:
         path: /health
@@ -131,7 +116,7 @@ ingress:
 autoscaling:
   enabled: true
   minReplicas: 2
-  maxReplicas: 10
+  maxReplicas: 3
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
@@ -207,20 +192,9 @@ networkPolicy:
         - protocol: TCP
           port: 3001
 
-# Additional labels to apply to all resources
 labels: {}
-
-# Additional annotations to apply to all resources
 annotations: {}
-
-# Node selector for pod assignment
 nodeSelector: {}
-
-# Tolerations for pod assignment
 tolerations: []
-
-# Affinity for pod assignment
 affinity: {}
-
-# This field will be updated by CI/CD pipeline
 deploymentTime: "2025-01-01T00:00:00Z"

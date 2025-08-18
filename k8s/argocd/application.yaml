@@ -16,7 +16,7 @@ spec:
   
   # Source of the application manifests
   source:
-    repoURL: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+    repoURL: https://github.com/Oluwaseun2003/reversed-ip-app
     targetRevision: main
     path: helm
     
@@ -89,7 +89,7 @@ spec:
     - name: 'Environment'
       value: 'staging'
     - name: 'Repository'
-      value: 'https://github.com/YOUR_USERNAME/YOUR_REPO_NAME'
+      value: 'https://github.com/Oluwaseun2003/reversed-ip-app'
 
 ---
 # Production Application (optional - for production environment)

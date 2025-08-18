@@ -7,8 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  # Docker Registry Configuration
-  REGISTRY: docker.io  # Using Docker Hub for now
+  REGISTRY: docker.io  
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   IMAGE_NAME: ip-reverser-app
   
@@ -20,7 +19,7 @@ env:
   # AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   # AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   
-  
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -138,6 +137,10 @@ jobs:
         
         # Update Docker Hub repository field
         sed -i "s|repository: docker.io/YOUR_DOCKER_USERNAME/ip-reverser-app|repository: docker.io/${{ env.DOCKER_USERNAME }}/ip-reverser-app|g" helm/values.yaml
+        
+        # Update database URL in secrets (base64 encode the DATABASE_URL)
+        DATABASE_URL_B64=$(echo -n "${{ secrets.DATABASE_URL }}" | base64 -w 0)
+        sed -i "s|database-url: \".*\"|database-url: \"${DATABASE_URL_B64}\"|g" helm/values.yaml
         
         # Update timestamp to trigger ArgoCD sync
         DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -301,6 +304,7 @@ jobs:
     #     argocd app sync ip-reverser-app-prod --force
     #     argocd app wait ip-reverser-app-prod --timeout 300
 
+    
 
     - name: Placeholder for Production Deployment
       run: |
