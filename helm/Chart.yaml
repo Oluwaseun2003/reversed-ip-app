@@ -1,0 +1,23 @@
+apiVersion: v2
+name: reversed-ip-app
+description: A Helm chart for deploying the Reversed IP Application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+keywords:
+  - reversed-ip
+  - nestjs
+  - prisma
+  - kubernetes
+  - helm
+
+home: https://github.com/Oluwaseun2003/reversed-ip-app
+sources:
+  - https://github.com/Oluwaseun2003/reversed-ip-app
+
+maintainers:
+  - name: Oluwaseun1511
+    email: oluwafemioluwaseun421@gmail.com
+
+dependencies: []

@@ -109,6 +109,7 @@ docker run -p 3000:3000 reverse-ip-app
 kubectl apply -f manifests/
 
 # Check deployment
+kubectl get namespace
 kubectl get pods -n <namespace>
 kubectl get svc -n <namespace>
 ```
