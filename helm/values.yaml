@@ -1,4 +1,3 @@
-
 global:
   # Environment (dev, staging, prod)
   environment: staging
@@ -9,9 +8,10 @@ image:
   repository: docker.io/oluwaseun1511/ip-reverser-app
   tag: "latest"
   pullPolicy: IfNotPresent
+
 deployment:
   replicaCount: 2
-    strategy:
+  strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
@@ -67,12 +67,9 @@ deployment:
 
 # Environment variables
 env:
-  # Application environment
   NODE_ENV: production
   PORT: 3001
   CORS_ORIGIN: "*"
-  
-  # Database configuration (will be set via secret)
   DATABASE_URL:
     secretName: ip-reverser-secrets
     secretKey: database-url
@@ -83,33 +80,32 @@ service:
   port: 80
   targetPort: 3001
   annotations: {}
-    # For AWS Load Balancer:
-    # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-    # service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
-    
+  # For AWS Load Balancer:
+  # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  # service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
 
 # Ingress configuration
 ingress:
   enabled: true
-  className: "nginx"  # Common for RKE clusters
+  className: "nginx"
   annotations: {}
-    # For AWS ALB:
-    # kubernetes.io/ingress.class: "alb"
-    # alb.ingress.kubernetes.io/scheme: "internet-facing"
-    # alb.ingress.kubernetes.io/target-type: "ip"
-    # For GCP:
-    # kubernetes.io/ingress.global-static-ip-name: "ip-reverser-ip"
-    # networking.gke.io/managed-certificates: "ip-reverser-ssl"
-    # kubernetes.io/ingress.allow-http: "false"
+  # For AWS ALB:
+  # kubernetes.io/ingress.class: "alb"
+  # alb.ingress.kubernetes.io/scheme: "internet-facing"
+  # alb.ingress.kubernetes.io/target-type: "ip"
+  # For GCP:
+  # kubernetes.io/ingress.global-static-ip-name: "ip-reverser-ip"
+  # networking.gke.io/managed-certificates: "ip-reverser-ssl"
+  # kubernetes.io/ingress.allow-http: "false"
   hosts:
     - host: api.your-domain.com
       paths:
         - path: /
           pathType: Prefix
   tls: []
-    # - secretName: ip-reverser-tls
-    #   hosts:
-    #     - api.your-domain.com
+  # - secretName: ip-reverser-tls
+  #   hosts:
+  #     - api.your-domain.com
 
 # Horizontal Pod Autoscaler
 autoscaling:
@@ -134,7 +130,7 @@ securityContext:
   runAsUser: 1001
   capabilities:
     drop:
-    - ALL
+      - ALL
 
 # ConfigMap data
 configMap:
@@ -145,10 +141,9 @@ configMap:
 
 # Secret data (base64 encoded values)
 secrets:
-  # Database URL - will be set via external secret or manually
   database-url: "cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBhc3N3b3JkQGhvc3QuZG9ja2VyLmludGVybmFsOjU0MzMvaXByZXZlcnNlcg=="
 
-# PostgreSQL dependency (if deploying postgres with the app)
+# PostgreSQL dependency
 postgresql:
   enabled: true
   auth:
@@ -168,7 +163,7 @@ postgresql:
         cpu: 200m
         memory: 256Mi
 
-# Service Monitor for Prometheus (monitoring)
+# Service Monitor
 serviceMonitor:
   enabled: true
   interval: 30s
