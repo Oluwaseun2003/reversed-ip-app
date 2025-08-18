@@ -133,5 +133,7 @@ kubectl get svc -n <namespace>
 * Expand CI/CD with staging → production environments
 
 ---
+---
+image.png
 
-Would you like me to **include actual screenshots of the CI/CD run + Trivy scan results** (badges in the README), so it looks even more professional? That way anyone visiting your repo immediately sees build + security status.
+---
