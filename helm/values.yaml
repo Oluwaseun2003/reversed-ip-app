@@ -147,7 +147,7 @@ configMap:
 # Secret data (base64 encoded values)
 secrets:
   # Database URL - will be set via external secret or manually
-  database-url: ""
+  database-url: "cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBhc3N3b3JkQGhvc3QuZG9ja2VyLmludGVybmFsOjU0MzMvaXByZXZlcnNlcg=="
 
 # PostgreSQL dependency (if deploying postgres with the app)
 postgresql:
@@ -197,4 +197,4 @@ annotations: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
-deploymentTime: "2025-01-01T00:00:00Z"
+deploymentTime: "2025-08-18T09:20:06Z"
