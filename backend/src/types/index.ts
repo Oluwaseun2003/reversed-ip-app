@@ -5,11 +5,13 @@ export interface ReverseIPRequest {
   export interface ReverseIPResponse {
     success: boolean;
     data: {
+      id: string;
       originalIP: string;
       reversedIP: string;
-      requestIP?: string;
+      requestIP: string | null;
+      userAgent: string | null;
       timestamp: string;
-      id: string;
+      createdAt: string;
     };
     message?: string;
   }
@@ -29,11 +31,12 @@ export interface ReverseIPRequest {
     id: string;
     originalIP: string;
     reversedIP: string;
-    requestIP?: string;
-    userAgent?: string;
+    requestIP: string | null;
+    userAgent: string | null;
     timestamp: string;
     createdAt: string;
   }
+  
   
   export interface APIError {
     success: false;

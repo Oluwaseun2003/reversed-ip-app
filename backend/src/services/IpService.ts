@@ -5,26 +5,25 @@ import type { IPHistoryEntry } from '../types/index.js';
 const prisma = new PrismaClient();
 
 export class IPService {
-  /**
-   * Reverse an IP address and store it in the database
-   */
   async reverseAndStore(
-    originalIP: string, 
+    originalIP: string,
     req: any
   ): Promise<{
     id: string;
     originalIP: string;
     reversedIP: string;
-    requestIP: string;
+    requestIP: string | null;
     timestamp: Date;
+    userAgent: string | null;
+    createdAt: Date;
   }> {
     // Reverse the IP address
     const reversedIP = reverseIP(originalIP);
-    
+
     // Extract client IP from request
     const requestIP = normalizeIP(extractClientIP(req));
     const userAgent = req.headers['user-agent'] || null;
-    
+
     // Store in database
     const result = await prisma.reversedIP.create({
       data: {
@@ -38,18 +37,23 @@ export class IPService {
         originalIP: true,
         reversedIP: true,
         requestIP: true,
+        userAgent: true,   
+        createdAt: true,
         timestamp: true,
       },
     });
-    
-    return result;
+
+    return {
+      ...result,
+      requestIP: result.requestIP ?? null,
+    };
   }
 
   /**
    * Get paginated history of reversed IPs
    */
   async getHistory(
-    page: number = 1, 
+    page: number = 1,
     limit: number = 10
   ): Promise<{
     entries: IPHistoryEntry[];
@@ -58,7 +62,7 @@ export class IPService {
     limit: number;
   }> {
     const skip = (page - 1) * limit;
-    
+
     const [entries, total] = await Promise.all([
       prisma.reversedIP.findMany({
         skip,
@@ -80,8 +84,12 @@ export class IPService {
     ]);
 
     return {
-      entries: entries.map((entry: { timestamp: { toISOString: () => any; }; createdAt: { toISOString: () => any; }; }) => ({
-        ...entry,
+      entries: entries.map((entry) => ({
+        id: entry.id,
+        originalIP: entry.originalIP,
+        reversedIP: entry.reversedIP,
+        requestIP: entry.requestIP ?? null,
+        userAgent: entry.userAgent,
         timestamp: entry.timestamp.toISOString(),
         createdAt: entry.createdAt.toISOString(),
       })),
@@ -105,12 +113,12 @@ export class IPService {
 
     const [totalEntries, uniqueOriginalIPs, todayEntries, topRequestIPs] = await Promise.all([
       prisma.reversedIP.count(),
-      
+
       prisma.reversedIP.findMany({
         select: { originalIP: true },
         distinct: ['originalIP'],
       }),
-      
+
       prisma.reversedIP.count({
         where: {
           createdAt: {
@@ -118,7 +126,7 @@ export class IPService {
           },
         },
       }),
-      
+
       prisma.reversedIP.groupBy({
         by: ['requestIP'],
         _count: {
@@ -142,7 +150,7 @@ export class IPService {
       totalEntries,
       uniqueIPs: uniqueOriginalIPs.length,
       todayEntries,
-      topRequestIPs: topRequestIPs.map((item: { requestIP: any; _count: { requestIP: any; }; }) => ({
+      topRequestIPs: topRequestIPs.map((item) => ({
         ip: item.requestIP || 'unknown',
         count: item._count.requestIP,
       })),
@@ -191,8 +199,12 @@ export class IPService {
       },
     });
 
-    return results.map((entry: { timestamp: { toISOString: () => any; }; createdAt: { toISOString: () => any; }; }) => ({
-      ...entry,
+    return results.map((entry) => ({
+      id: entry.id,
+      originalIP: entry.originalIP,
+      reversedIP: entry.reversedIP,
+      requestIP: entry.requestIP ?? null,
+      userAgent: entry.userAgent,
       timestamp: entry.timestamp.toISOString(),
       createdAt: entry.createdAt.toISOString(),
     }));
