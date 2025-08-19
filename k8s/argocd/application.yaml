@@ -1,85 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ip-reverser-app-staging
-  namespace: argocd
-  labels:
-    app.kubernetes.io/name: ip-reverser-app
-    app.kubernetes.io/part-of: argocd
-    environment: staging
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  
-  source:
-    repoURL: https://github.com/Oluwaseun2003/reversed-ip-app
-    targetRevision: main
-    path: helm
-    
-    helm:
-      releaseName: ip-reverser-app-staging
-      
-      # Use only values.yaml - let CI/CD update the image tag there
-      valueFiles:
-        - values.yaml
-      
-      # Override only environment-specific values, not image tag
-      parameters:
-        - name: global.environment
-          value: staging
-        - name: deployment.replicaCount
-          value: "2"
-        - name: autoscaling.minReplicas
-          value: "2"
-        - name: autoscaling.maxReplicas
-          value: "3"
-      
-      skipCrds: false
-  
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: apps-staging
-  
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: false
-    
-    syncOptions:
-      - CreateNamespace=true
-      - PrunePropagationPolicy=foreground
-      - PruneLast=true
-      - ApplyOutOfSyncOnly=true
-    
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m
-  
-  # Ignore differences for dynamic fields
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas
-    - group: ""
-      kind: Service
-      jsonPointers:
-        - /spec/clusterIP
-    - group: ""
-      kind: ConfigMap
-      jsonPointers:
-        - /data/deploymentTime
-
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: ip-reverser-app-prod
+  name: ip-reverser-app
   namespace: argocd
   labels:
     app.kubernetes.io/name: ip-reverser-app
@@ -89,20 +11,15 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  
+
   source:
     repoURL: https://github.com/Oluwaseun2003/reversed-ip-app
     targetRevision: main
     path: helm
-    
     helm:
-      releaseName: ip-reverser-app-prod
-      
-      # Only use values.yaml
+      releaseName: ip-reverser-app
       valueFiles:
         - values.yaml
-      
-      # Override values for production environment  
       parameters:
         - name: global.environment
           value: production
@@ -116,25 +33,21 @@ spec:
           value: "1000m"
         - name: deployment.container.resources.limits.memory
           value: "1Gi"
-  
+
   destination:
     server: https://kubernetes.default.svc
     namespace: apps-prod
-  
+
   syncPolicy:
-    # Manual sync for production (no automated)
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
       - PruneLast=true
-    
-    retry:
-      limit: 3
-      backoff:
-        duration: 10s
-        factor: 2
-        maxDuration: 5m
-  
+      - ApplyOutOfSyncOnly=true
+
   ignoreDifferences:
     - group: apps
       kind: Deployment
@@ -144,3 +57,7 @@ spec:
       kind: Service
       jsonPointers:
         - /spec/clusterIP
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data/deploymentTime
