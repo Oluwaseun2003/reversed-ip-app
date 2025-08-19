@@ -79,6 +79,9 @@ configMap:
     PORT: "3001"
     CORS_ORIGIN: "*"
 
+env: {}   # no extra env vars here
+
+
 secrets:
   database_url: "postgresql://postgres:password@ip-reverser-app-prod-postgresql.apps-prod.svc.cluster.local:5432/ipreverser"
 

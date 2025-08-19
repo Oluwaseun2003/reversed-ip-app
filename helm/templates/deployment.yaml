@@ -35,17 +35,4 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: ip-reverser-secrets
-                  key: database_url   # ✅ fixed underscore
-
-            # Extra env vars from values.yaml
-            {{- range $key, $value := .Values.env }}
-            - name: {{ $key }}
-              {{- if and (kindIs "map" $value) (hasKey $value "secretName") }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $value.secretName }}
-                  key: {{ $value.secretKey }}
-              {{- else }}
-              value: {{ $value | quote }}
-              {{- end }}
-            {{- end }}
+                  key: database-url   # ✅ match your Secret data
