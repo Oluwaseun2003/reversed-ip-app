@@ -1,20 +1,14 @@
 global:
   environment: production
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: Always  # Changed to ensure latest image is pulled
 
 image:
   repository: docker.io/oluwaseun1511/ip-reverser-app
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 deployment:
   replicaCount: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-
   container:
     port: 3001
     resources:
@@ -24,6 +18,15 @@ deployment:
       requests:
         cpu: 200m
         memory: 256Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
     livenessProbe:
       httpGet:
         path: /health
@@ -43,15 +46,20 @@ deployment:
       initialDelaySeconds: 10
       periodSeconds: 10
       failureThreshold: 30
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-      runAsNonRoot: true
-      runAsUser: 1000
-      runAsGroup: 1000
-      seccompProfile:
-        type: RuntimeDefault
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 3001  # Added to map to container port
+
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: ip-reverse.cloudknight-api.com  # Updated to match your DNS
+      paths:
+        - path: /
+          pathType: Prefix
 
 env:
   NODE_ENV: production
@@ -61,34 +69,11 @@ env:
     secretName: ip-reverser-secrets
     secretKey: database-url
 
-service:
-  type: LoadBalancer
-  port: 80
-
-ingress:
-  enabled: true
-  className: "nginx"
-  hosts:
-    - host: api.your-domain.com
-      paths:
-        - path: /
-          pathType: Prefix
-
-autoscaling:
-  enabled: true
-  minReplicas: 3
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 70
-  targetMemoryUtilizationPercentage: 80
-
 configMap:
   data:
     NODE_ENV: "production"
     PORT: "3001"
     CORS_ORIGIN: "*"
-
-env: {}   # no extra env vars here
-
 
 secrets:
   database_url: "postgresql://postgres:password@ip-reverser-app-prod-postgresql.apps-prod.svc.cluster.local:5432/ipreverser"
@@ -105,6 +90,13 @@ postgresql:
       enabled: true
       size: 8Gi
 
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
 serviceMonitor:
   enabled: true
   interval: 30s
@@ -115,4 +107,4 @@ serviceMonitor:
 
 podDisruptionBudget:
   enabled: true
-  minAvailable: 1
+  minAvailable: 2

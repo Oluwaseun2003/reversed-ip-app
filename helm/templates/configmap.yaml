@@ -1,17 +1,14 @@
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: ip-reverser-secrets
+  name: ip-reverser-config
   namespace: {{ .Release.Namespace | default "apps-prod" }}
   labels:
     app.kubernetes.io/name: ip-reverser-app
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-type: Opaque
 data:
-  {{- if .Values.secrets.database_url }}
-  database-url: {{ .Values.secrets.database_url | b64enc | quote }}
-  {{- else }}
-  database-url: ""
+  {{- range $key, $value := .Values.configMap.data }}
+  {{ $key }}: {{ $value | quote }}
   {{- end }}
