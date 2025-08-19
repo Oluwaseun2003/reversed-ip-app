@@ -55,7 +55,6 @@ env:
 service:
   type: LoadBalancer
   port: 80
-  targetPort: 3001
 
 ingress:
   enabled: true
