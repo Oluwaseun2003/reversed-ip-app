@@ -141,7 +141,7 @@ configMap:
 
 # Secret data (base64 encoded values)
 secrets:
-    database-url: "postgresql://postgres:password@host.docker.internal:5433/ipreverser"
+    database-url: "cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBhc3N3b3JkQGhvc3QuZG9ja2VyLmludGVybmFsOjU0MzMvaXByZXZlcnNlcg=="
 
 # PostgreSQL dependency
 postgresql:
@@ -191,4 +191,4 @@ annotations: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
-deploymentTime: "2025-08-19T06:12:42Z"
+deploymentTime: "2025-08-19T06:52:27Z"
