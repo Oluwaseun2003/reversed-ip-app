@@ -141,7 +141,7 @@ configMap:
 
 # Secret data (base64 encoded values)
 secrets:
-  database-url: "cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBhc3N3b3JkQGhvc3QuZG9ja2VyLmludGVybmFsOjU0MzMvaXByZXZlcnNlcg=="
+  database_url: ""
 
 # PostgreSQL dependency
 postgresql:
