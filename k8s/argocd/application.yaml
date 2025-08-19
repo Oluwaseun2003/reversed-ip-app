@@ -20,16 +20,14 @@ spec:
     helm:
       releaseName: ip-reverser-app-staging
       
-      # Only use values.yaml since values-staging.yaml doesn't exist
+      # Use only values.yaml - let CI/CD update the image tag there
       valueFiles:
         - values.yaml
       
-      # Override values for staging environment
+      # Override only environment-specific values, not image tag
       parameters:
         - name: global.environment
           value: staging
-        - name: image.tag
-          value: latest
         - name: deployment.replicaCount
           value: "2"
         - name: autoscaling.minReplicas
@@ -104,12 +102,10 @@ spec:
       valueFiles:
         - values.yaml
       
-      # Override values for production environment
+      # Override values for production environment  
       parameters:
         - name: global.environment
           value: production
-        - name: image.tag
-          value: latest
         - name: deployment.replicaCount
           value: "3"
         - name: autoscaling.minReplicas
