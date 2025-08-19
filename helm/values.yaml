@@ -2,11 +2,14 @@ global:
   environment: production
   imagePullPolicy: Always
 
+secrets:
+  database_url: "postgresql://postgres:PL4YAjUIdS35SHc8suhi@ip-reverser-db.cb68ik26gia3.eu-north-1.rds.amazonaws.com:5432/ipreverser"
+postgresql:
+  enabled: false  # Disable local PostgreSQL subchart
 image:
   repository: docker.io/oluwaseun1511/ip-reverser-app
   tag: "latest"
   pullPolicy: Always
-
 deployment:
   replicaCount: 3
   container:
@@ -46,12 +49,10 @@ deployment:
       initialDelaySeconds: 10
       periodSeconds: 10
       failureThreshold: 30
-
 service:
   type: LoadBalancer
   port: 80
   targetPort: 3001
-
 ingress:
   enabled: true
   className: "nginx"
@@ -60,23 +61,12 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-
 configMap:
   data:
     NODE_ENV: "production"
     PORT: "3001"
     CORS_ORIGIN: "*"
-
-secrets:
-  database_url: "postgresql://myuser:mypassword@mydb.apps-prod.svc.cluster.local:5432/ipreverserdb"
-
-postgresql:
-  enabled: true
-  auth:
-    postgresPassword: "your-postgres-password"
-    username: "postgres"
-    password: "password"
-    database: "ipreverser"
+  
   primary:
     persistence:
       enabled: true
@@ -85,7 +75,7 @@ postgresql:
 autoscaling:
   enabled: true
   minReplicas: 3
-  maxReplicas: 10
+  maxReplicas: 5
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
@@ -96,7 +86,3 @@ serviceMonitor:
   path: /metrics
   labels:
     app: ip-reverser-app
-
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 1
