@@ -24,9 +24,9 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-            runAsNonRoot: true
+            runAsNonRoot: false  # Or remove this line
             seccompProfile:
-              type: RuntimeDefault
+            type: RuntimeDefault
           env:
             # ConfigMap values
             {{- range $key, $value := .Values.configMap.data }}
