@@ -6,7 +6,7 @@ metadata:
   labels:
     app: {{ .Release.Name }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.deployment.replicaCount }}  # Use value from values.yaml
   selector:
     matchLabels:
       app: {{ .Release.Name }}
@@ -42,14 +42,3 @@ spec:
                 secretKeyRef:
                   name: ip-reverser-secrets
                   key: database-url
-            {{- range $key, $value := .Values.env }}
-            - name: {{ $key }}
-              {{- if and (kindIs "map" $value) (hasKey $value "secretName") }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $value.secretName }}
-                  key: {{ $value.secretKey }}
-              {{- else }}
-              value: {{ $value | quote }}
-              {{- end }}
-            {{- end }}

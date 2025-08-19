@@ -1,6 +1,6 @@
 global:
   environment: production
-  imagePullPolicy: Always  # Changed to ensure latest image is pulled
+  imagePullPolicy: Always
 
 image:
   repository: docker.io/oluwaseun1511/ip-reverser-app
@@ -50,24 +50,16 @@ deployment:
 service:
   type: LoadBalancer
   port: 80
-  targetPort: 3001  # Added to map to container port
+  targetPort: 3001
 
 ingress:
   enabled: true
   className: "nginx"
   hosts:
-    - host: ip-reverse.cloudknight-api.com  # Updated to match your DNS
+    - host: ip-reverse.cloudknight-api.com
       paths:
         - path: /
           pathType: Prefix
-
-env:
-  NODE_ENV: production
-  PORT: 3001
-  CORS_ORIGIN: "*"
-  DATABASE_URL:
-    secretName: ip-reverser-secrets
-    secretKey: database-url
 
 configMap:
   data:
@@ -76,7 +68,7 @@ configMap:
     CORS_ORIGIN: "*"
 
 secrets:
-  database_url: "postgresql://postgres:password@ip-reverser-app-prod-postgresql.apps-prod.svc.cluster.local:5432/ipreverser"
+  database_url: "postgresql://myuser:mypassword@mydb.apps-prod.svc.cluster.local:5432/ipreverserdb"
 
 postgresql:
   enabled: true
@@ -107,4 +99,4 @@ serviceMonitor:
 
 podDisruptionBudget:
   enabled: true
-  minAvailable: 2
+  minAvailable: 1
