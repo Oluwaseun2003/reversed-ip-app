@@ -1,17 +1,15 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ip-reverser-app
+  name: ip-reverser-app-staging
   namespace: argocd
   labels:
     app.kubernetes.io/name: ip-reverser-app
     app.kubernetes.io/part-of: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    environment: staging
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  # The project the application belongs to
   project: default
   
   source:
@@ -19,48 +17,44 @@ spec:
     targetRevision: main
     path: helm
     
-    # Helm specific configuration
     helm:
-      # Release name
-      releaseName: ip-reverser-app
+      releaseName: ip-reverser-app-staging
       
-      # Values files to use
+      # Only use values.yaml since values-staging.yaml doesn't exist
       valueFiles:
         - values.yaml
-        - values-staging.yaml  # Environment-specific overrides
       
-      # Additional parameters
+      # Override values for staging environment
       parameters:
         - name: global.environment
           value: staging
         - name: image.tag
           value: latest
+        - name: deployment.replicaCount
+          value: "2"
+        - name: autoscaling.minReplicas
+          value: "2"
+        - name: autoscaling.maxReplicas
+          value: "3"
       
-      # Skip CRDs if needed
       skipCrds: false
   
-  # Destination cluster and namespace
   destination:
     server: https://kubernetes.default.svc
-    namespace: ip-reverser
+    namespace: apps-staging
   
-  # Sync policy
   syncPolicy:
-    # Automated sync configuration
     automated:
-      prune: true      # Remove resources that are no longer defined in Git
-      selfHeal: true   # Correct drift by syncing when the live cluster's state deviates from Git
-      allowEmpty: false # Don't sync if the directory is empty
+      prune: true
+      selfHeal: true
+      allowEmpty: false
     
-    # Sync options
     syncOptions:
-      - CreateNamespace=true     # Create namespace if it doesn't exist
+      - CreateNamespace=true
       - PrunePropagationPolicy=foreground
-      - PruneLast=true          # Prune resources as a last step
-      - RespectIgnoreDifferences=true
-      - ApplyOutOfSyncOnly=true # Only apply resources that are out of sync
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
     
-    # Retry configuration
     retry:
       limit: 5
       backoff:
@@ -68,7 +62,7 @@ spec:
         factor: 2
         maxDuration: 3m
   
-  # Ignore differences in certain fields (common for dynamic fields)
+  # Ignore differences for dynamic fields
   ignoreDifferences:
     - group: apps
       kind: Deployment
@@ -82,27 +76,17 @@ spec:
       kind: ConfigMap
       jsonPointers:
         - /data/deploymentTime
-  
-  # Health check configuration
-  info:
-    - name: 'Environment'
-      value: 'staging'
-    - name: 'Repository'
-      value: 'https://github.com/Oluwaseun2003/reversed-ip-app'
 
 ---
-# Production Application (optional - for production environment)
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: ip-reverser-app-prod
   namespace: argocd
   labels:
-    app.kubernetes.io/name: ip-reverser-app-prod
+    app.kubernetes.io/name: ip-reverser-app
     app.kubernetes.io/part-of: argocd
     environment: production
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -115,30 +99,39 @@ spec:
     
     helm:
       releaseName: ip-reverser-app-prod
+      
+      # Only use values.yaml
       valueFiles:
         - values.yaml
-        - values-prod.yaml
+      
+      # Override values for production environment
       parameters:
         - name: global.environment
           value: production
+        - name: image.tag
+          value: latest
         - name: deployment.replicaCount
           value: "3"
         - name: autoscaling.minReplicas
           value: "3"
         - name: autoscaling.maxReplicas
-          value: "20"
+          value: "10"
+        - name: deployment.container.resources.limits.cpu
+          value: "1000m"
+        - name: deployment.container.resources.limits.memory
+          value: "1Gi"
   
   destination:
     server: https://kubernetes.default.svc
-    namespace: ip-reverser-prod
+    namespace: apps-prod
   
   syncPolicy:
-    # Manual sync for production - requires approval
-    automated: {}
+    # Manual sync for production (no automated)
     syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
       - PruneLast=true
+    
     retry:
       limit: 3
       backoff:
