@@ -191,4 +191,26 @@ annotations: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+
+# Pod-level security context
+podSecurityContext:
+  runAsUser: 1001
+  runAsGroup: 3000
+  fsGroup: 2000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level security context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1001
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+    
 deploymentTime: "2025-08-19T07:12:15Z"
