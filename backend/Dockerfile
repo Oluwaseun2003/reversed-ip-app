@@ -40,12 +40,17 @@ FROM build AS production
 # Set working directory
 WORKDIR /app
 
-# Switch to non-root user early to satisfy PodSecurity
-USER node
+# Copy built application with numeric ownership
+COPY --from=build --chown=1000:1000 /app/dist ./dist
+COPY --from=build --chown=1000:1000 /app/package*.json ./
+COPY --from=build --chown=1000:1000 /app/prisma ./prisma
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3001
+
+# Switch to numeric non-root user
+USER 1000:1000
 
 # Expose port
 EXPOSE 3001
