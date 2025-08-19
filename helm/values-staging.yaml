@@ -1,13 +1,13 @@
 global:
   # Environment (staging)
   environment: staging
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: Always
 
 # Application image configuration
 image:
   repository: docker.io/oluwaseun1511/ip-reverser-app
   tag: "staging"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 deployment:
   replicaCount: 2
