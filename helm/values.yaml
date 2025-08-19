@@ -43,6 +43,15 @@ deployment:
       initialDelaySeconds: 10
       periodSeconds: 10
       failureThreshold: 30
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
 
 env:
   NODE_ENV: production
