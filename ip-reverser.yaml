@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ip-reverser-secrets
+  namespace: apps-prod
+type: Opaque
+stringData:
+  database-url: "postgresql://postgres:PL4YAjUIdS35SHc8suhi@ip-reverser-db.cb68ik26gia3.eu-north-1.rds.amazonaws.com:5432/ipreverser?sslmode=require"

@@ -2,10 +2,10 @@ global:
   environment: production
   imagePullPolicy: Always
 
-secrets:
-  database_url: "postgresql://postgres:PL4YAjUIdS35SHc8suhi@ip-reverser-db.cb68ik26gia3.eu-north-1.rds.amazonaws.com:5432/ipreverser"
+ssecrets:
+  database_url: ""  
 postgresql:
-  enabled: false  # Disable local PostgreSQL subchart
+  enabled: false
 image:
   repository: docker.io/oluwaseun1511/ip-reverser-app
   tag: "latest"
@@ -29,7 +29,7 @@ deployment:
       runAsUser: 1000
       runAsGroup: 1000
       seccompProfile:
-        type: RuntimeDefault
+        type: "RuntimeDefault"
     livenessProbe:
       httpGet:
         path: /health
@@ -49,6 +49,12 @@ deployment:
       initialDelaySeconds: 10
       periodSeconds: 10
       failureThreshold: 30
+    env:
+      - name: DATABASE_URL
+        valueFrom:
+          secretKeyRef:
+            name: ip-reverser-secrets
+            key: database-url
 service:
   type: LoadBalancer
   port: 80
@@ -66,23 +72,3 @@ configMap:
     NODE_ENV: "production"
     PORT: "3001"
     CORS_ORIGIN: "*"
-  
-  primary:
-    persistence:
-      enabled: true
-      size: 8Gi
-
-autoscaling:
-  enabled: true
-  minReplicas: 3
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 70
-  targetMemoryUtilizationPercentage: 80
-
-serviceMonitor:
-  enabled: true
-  interval: 30s
-  scrapeTimeout: 10s
-  path: /metrics
-  labels:
-    app: ip-reverser-app
