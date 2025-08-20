@@ -12,7 +12,7 @@ export class IPService {
     id: string;
     originalIP: string;
     reversedIP: string;
-    requestIP: string | null;
+    requestIP: string;
     timestamp: Date;
     userAgent: string | null;
     createdAt: Date;
@@ -20,8 +20,8 @@ export class IPService {
     // Reverse the IP address
     const reversedIP = reverseIP(originalIP);
 
-    // Extract client IP from request
-    const requestIP = normalizeIP(extractClientIP(req));
+    // Extract client IP from request, fallback to 'unknown' if null
+    const requestIP = normalizeIP(extractClientIP(req)) || 'unknown';
     const userAgent = req.headers['user-agent'] || null;
 
     // Store in database
@@ -43,9 +43,20 @@ export class IPService {
       },
     });
 
-    return {
-      ...result,
-      requestIP: result.requestIP ?? null,
+    // Ensure requestIP is always a string (never null)
+    if (result.requestIP === null) {
+      result.requestIP = 'unknown';
+    }
+
+    // Type assertion to satisfy return type (requestIP is now string)
+    return result as {
+      id: string;
+      originalIP: string;
+      reversedIP: string;
+      requestIP: string;
+      timestamp: Date;
+      userAgent: string | null;
+      createdAt: Date;
     };
   }
 
@@ -88,7 +99,7 @@ export class IPService {
         id: entry.id,
         originalIP: entry.originalIP,
         reversedIP: entry.reversedIP,
-        requestIP: entry.requestIP ?? null,
+        requestIP: entry.requestIP,
         userAgent: entry.userAgent,
         timestamp: entry.timestamp.toISOString(),
         createdAt: entry.createdAt.toISOString(),
@@ -113,12 +124,10 @@ export class IPService {
 
     const [totalEntries, uniqueOriginalIPs, todayEntries, topRequestIPs] = await Promise.all([
       prisma.reversedIP.count(),
-
       prisma.reversedIP.findMany({
         select: { originalIP: true },
         distinct: ['originalIP'],
       }),
-
       prisma.reversedIP.count({
         where: {
           createdAt: {
@@ -126,7 +135,6 @@ export class IPService {
           },
         },
       }),
-
       prisma.reversedIP.groupBy({
         by: ['requestIP'],
         _count: {
@@ -138,11 +146,6 @@ export class IPService {
           },
         },
         take: 5,
-        where: {
-          requestIP: {
-            not: null,
-          },
-        },
       }),
     ]);
 
@@ -151,8 +154,8 @@ export class IPService {
       uniqueIPs: uniqueOriginalIPs.length,
       todayEntries,
       topRequestIPs: topRequestIPs.map((item) => ({
-        ip: item.requestIP || 'unknown',
-        count: item._count.requestIP,
+        ip: item.requestIP!,
+        count: item._count!.requestIP,
       })),
     };
   }
@@ -203,7 +206,7 @@ export class IPService {
       id: entry.id,
       originalIP: entry.originalIP,
       reversedIP: entry.reversedIP,
-      requestIP: entry.requestIP ?? null,
+      requestIP: entry.requestIP,
       userAgent: entry.userAgent,
       timestamp: entry.timestamp.toISOString(),
       createdAt: entry.createdAt.toISOString(),
