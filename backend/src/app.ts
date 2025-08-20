@@ -11,6 +11,7 @@ const app: Application = express();
 
 // Trust proxy - important for getting real client IPs
 app.set('trust proxy', true);
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
 // Request timeout (30 seconds)
 app.use(timeoutHandler(30000));

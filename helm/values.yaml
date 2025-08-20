@@ -2,7 +2,7 @@ global:
   environment: production
   imagePullPolicy: Always
 
-ssecrets:
+secrets:
   database_url: ""  
 postgresql:
   enabled: false
@@ -72,3 +72,7 @@ configMap:
     NODE_ENV: "production"
     PORT: "3001"
     CORS_ORIGIN: "*"
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
