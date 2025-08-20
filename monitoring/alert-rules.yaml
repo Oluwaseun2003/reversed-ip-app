@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: blackbox-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+spec:
+  groups:
+    - name: app-health
+      rules:
+        - alert: IpReverserAppDown
+          expr: up{job="ip-reverser-app-health"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "IP Reverser App is down"
+            description: "The health endpoint http://ip-reverse.cloudknight-api.com/health is down or returning non-200 status."

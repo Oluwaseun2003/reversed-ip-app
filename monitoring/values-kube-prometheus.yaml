@@ -1,0 +1,19 @@
+prometheus:
+  prometheusSpec:
+    additionalScrapeConfigs:
+      - job_name: 'ip-reverser-app-health'
+        scrape_interval: 30s
+        scrape_timeout: 10s
+        metrics_path: /health
+        scheme: http
+        static_configs:
+          - targets: ['ip-reverse.cloudknight-api.com']
+
+alertmanager:
+  enabled: true
+
+grafana:
+  enabled: true
+  adminPassword: prom-operator  # Default password
+
+namespaceOverride: monitoring
