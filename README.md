@@ -1,6 +1,5 @@
-Here’s your project description formatted neatly in **Markdown** for use in your `README.md`:
 
-```markdown
+
 # IP Reverser App
 
 Welcome to the **IP Reverser App**, a full-stack web application that allows users to perform reverse IP lookups, storing and retrieving IP data with a PostgreSQL database.  
@@ -33,8 +32,8 @@ This application:
 
 ---
 
+
 ## 📂 Folder Structure
-```
 
 reversed-ip-app/
 ├── .github/
@@ -52,7 +51,6 @@ reversed-ip-app/
 │   └── tsconfig.json     # TypeScript config
 └── README.md             # Documentation
 
-````
 
 ---
 
@@ -94,7 +92,7 @@ The deployment pipeline runs automatically on push to `main`:
 ---
 
 ## 🏗️ Architecture
-```graph TD
+  graph TD
     A[User] -->|HTTP Request| B[Reverse IP App API]
     B --> C[IP Lookup Service]
     B --> D[Database / Cache]
@@ -107,7 +105,7 @@ The deployment pipeline runs automatically on push to `main`:
         G -->|Deploy| J[Kubernetes Cluster]
     end
 
-````
+
 
 ---
 
