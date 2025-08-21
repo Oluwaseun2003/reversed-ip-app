@@ -94,21 +94,19 @@ The deployment pipeline runs automatically on push to `main`:
 ---
 
 ## 🏗️ Architecture
-```mermaid
-graph TD
-    A[User] -->|HTTP Request| B[Ingress: ip-reverse.cloudknight-api.com]
-    B --> C[Reverse IP App API]
-    C --> D[IP Lookup Service]
-    C --> E[PostgreSQL on AWS RDS]
-    C --> F[Response as JSON]
+```graph TD
+    A[User] -->|HTTP Request| B[Reverse IP App API]
+    B --> C[IP Lookup Service]
+    B --> D[Database / Cache]
+    B --> E[Response as JSON]
 
     subgraph DevOps
         G[GitHub Actions CI/CD]
         G -->|Build & Test| H[Docker Image]
         G -->|Trivy Scan| I[Security Alerts]
-        G -->|Update Helm| J[ArgoCD]
-        J -->|Deploy| K[Kubernetes RKE2 Cluster]
+        G -->|Deploy| J[Kubernetes Cluster]
     end
+
 ````
 
 ---
@@ -300,13 +298,7 @@ curl "http://ip-reverse.cloudknight-api.com/api/ip/search?q=192"
    ```
 5. Open a Pull Request.
 
----
 
-## 📄 License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
 
 ## 🙏 Acknowledgments
 
