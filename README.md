@@ -33,7 +33,12 @@ This application:
 ---
 
 
+---
+
+
 ## 📂 Folder Structure
+
+```
 
 reversed-ip-app/
 ├── .github/
@@ -50,18 +55,18 @@ reversed-ip-app/
 │   ├── package.json      # Dependencies and scripts
 │   └── tsconfig.json     # TypeScript config
 └── README.md             # Documentation
-
+```
 
 ---
 
 ## 🛠️ Tech Stack
-- **Backend:** Node.js, TypeScript, Express, Prisma  
-- **Database:** PostgreSQL (AWS RDS)  
-- **Containerization:** Docker  
-- **Orchestration:** Kubernetes (RKE2) with Helm and ArgoCD  
-- **CI/CD:** GitHub Actions (build, test, security scan, deploy)  
-- **Security:** Trivy vulnerability scanning (SARIF uploaded to GitHub Security tab)  
-- **Ingress:** AWS ALB with custom domain (`ip-reverse.cloudknight-api.com`)  
+* **Backend:** Node.js, TypeScript, Express, Prisma  
+* **Database:** PostgreSQL (AWS RDS)  
+* **Containerization:** Docker  
+* **Orchestration:** Kubernetes (RKE2) with Helm and ArgoCD  
+* **CI/CD:** GitHub Actions (build, test, security scan, deploy)  
+* **Security:** Trivy vulnerability scanning (SARIF uploaded to GitHub Security tab)  
+* **Ingress:** AWS ALB with custom domain (`ip-reverse.cloudknight-api.com`)  
 
 ---
 
@@ -92,7 +97,9 @@ The deployment pipeline runs automatically on push to `main`:
 ---
 
 ## 🏗️ Architecture
-  graph TD
+
+```mermaid
+graph TD
     A[User] -->|HTTP Request| B[Reverse IP App API]
     B --> C[IP Lookup Service]
     B --> D[Database / Cache]
@@ -104,8 +111,7 @@ The deployment pipeline runs automatically on push to `main`:
         G -->|Trivy Scan| I[Security Alerts]
         G -->|Deploy| J[Kubernetes Cluster]
     end
-
-
+```
 
 ---
 
@@ -302,7 +308,3 @@ curl "http://ip-reverse.cloudknight-api.com/api/ip/search?q=192"
 
 * Built by **Oluwaseun2003**.
 
-```
-
-
-```
